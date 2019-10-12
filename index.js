@@ -24,6 +24,13 @@ function isInArray(value, array) {
   return array.indexOf(value) > -1;
 }
 
+function buildResponse(t) {
+    return `${t}
+
+=======
+1.1.1.1 is a partnership between Cloudflare and APNIC`
+}
+
 async function sendTelegram(token, chat_id, message) {
     let req = await fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chat_id}&text=${message}`)
 
@@ -86,11 +93,11 @@ async function handleTwilio(req) {
     }
 
     if (validator.isFQDN(domain) == false) {
-        return new Response(`${domain} does not appear to be a FQDN`)
+        return new Response(buildResponse(`${domain} does not appear to be a FQDN`))
     }
 
     if (isInArray(rtype, rrtypes) == false) {
-        return new Response(`${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`)
+        return new Response(buildResponse(`${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`))
     }
 
     let d = await getDNS(domain, rtype)
@@ -102,10 +109,7 @@ async function handleTwilio(req) {
         ips = `We couldn't find any ${rtype} records for ${domain}`
     }
 
-    output = `${ips}
-
-=======
-1.1.1.1 is a partnership between Cloudflare and APNIC`
+    output = buildResponse(`${ips}`)
 
     return new Response(output, {
         headers: {
@@ -153,25 +157,27 @@ async function handleTelegram(req) {
 
 
     if (isInArray(domain, ['/start', '/stop', '/help'])) {
-        output = `Welcome to 1.1.1.1, a partnership between Cloudflare and APNIC
+        output = buildResponse(`Welcome to 1.1.1.1, a partnership between Cloudflare and APNIC
 
-To get started, simply send the record type (default: AAAA), followed by a space and the hostname you'd like to lookup and I'll answer as quick as I can!`
+To get started, simply send the record type (default: AAAA), followed by a space and the hostname you'd like to lookup and I'll answer as quick as I can!`)
+        let t = await sendTelegram(botToken, messageId, output)
+        return new Response(output)
     }
 
     if (validator.isFQDN(domain) == false) {
-        output = `${domain} does not appear to be a FQDN`
+        output = buildResponse(`${domain} does not appear to be a FQDN`)
         let t = await sendTelegram(botToken, messageId, output)
         return new Response(output)
     }
 
     if (isInArray(rtype, rrtypes) == false) {
-        output = `${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`
+        output = buildResponse(`${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`)
         let t = await sendTelegram(botToken, messageId, output)
         return new Response(output)
     }
 
     if (isInArray(rtype, rrtypes) == false) {
-        output = `${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`
+        output = buildResponse(`${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`)
         let t = await sendTelegram(botToken, messageId, output)
         return new Response(output)
     }
@@ -185,10 +191,7 @@ To get started, simply send the record type (default: AAAA), followed by a space
         ips = `We couldn't find any ${rtype} records for ${domain}`
     }
 
-    output = `${ips}
-
-=======
-1.1.1.1 is a partnership between Cloudflare and APNIC`
+    output = buildResponse(`${ips}`)
 
     let t = await sendTelegram(botToken, messageId, output)
     return new Response(output, {
@@ -222,13 +225,13 @@ async function handleEmail(req) {
     }
 
     if (validator.isFQDN(domain) == false) {
-        output = `${domain} does not appear to be a FQDN`
+        output = buildResponse(`${domain} does not appear to be a FQDN`)
         let t = await sendEmail(secretsEmail, messageFrom, output)
         return new Response(output)
     }
 
     if (isInArray(rtype, rrtypes) == false) {
-        output = `${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`
+        output = buildResponse(`${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`)
         let t = await sendEmail(secretsEmail, messageFrom, output)
         return new Response(output)
     }
@@ -242,10 +245,7 @@ async function handleEmail(req) {
         ips = `We couldn't find any ${rtype} records for ${domain}`
     }
 
-    output = `${ips}
-
-=======
-1.1.1.1 is a partnership between Cloudflare and APNIC`
+    output = buildResponse(`${ips}`)
 
     let t = await sendEmail(secretsEmail, messageFrom, output)
     return new Response(output, {
