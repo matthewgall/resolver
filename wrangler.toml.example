@@ -1,0 +1,10 @@
+workers_dev = true
+account_id = ""
+name = "resolver"
+type = "webpack"
+route = ""
+zone_id = ""
+
+[[kv-namespaces]]
+binding = "secrets"
+id = ""
