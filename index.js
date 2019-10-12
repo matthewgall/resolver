@@ -15,9 +15,6 @@ const rrtypes = [
     'TXT'
 ]
 
-/**
- * Example of how router can be used in an application
- *  */
 addEventListener('fetch', event => {
     event.respondWith(handleRequest(event.request))
 })
