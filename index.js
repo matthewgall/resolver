@@ -35,6 +35,17 @@ async function sendTelegram(token, chat_id, message) {
     return false
 }
 
+async function sendEmail(meta, to, message) {
+    let req = await fetch(`https://api.mailgun.net/v3/${meta['from']['domain']}/messages`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': meta['auth']
+        },
+        body: `from=${meta['from']['name']} <${meta['from']['address']}>&subject=${meta['subject']}&to=${to}&text=${message}`
+    })
+}
+
 async function getDNS(domain, rtype) {
     let records = []
     let req = await fetch(
@@ -174,14 +185,61 @@ To get started, simply send the record type (default: AAAA), followed by a space
 }
 
 async function handleEmail(req) {
-    let secrets_email = await secrets.get('email')
-    return false
+    let secretsEmail = await secrets.get('email')
+    secretsEmail = JSON.parse(secretsEmail)
+
+    let formData = await req.formData()
+    let messageFrom = formData.get('sender')
+    let messageBody = formData.get('stripped-text')
+
+    let data = messageBody.trim().split(' ')
+    let domain = ''
+    let rtype = 'AAAA'
+
+    let output = ''
+    let ips = ''
+
+    if (data.length > 1) {
+        rtype = data[0].toUpperCase()
+        domain = data[1].toLowerCase()
+    } 
+    else {
+        domain = data[0].toLowerCase()
+    }
+
+    if (isInArray(rtype, rrtypes) == false) {
+        output = `${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`
+    }
+    else {
+        let d = await getDNS(domain, rtype)
+
+        if (d.length > 0) {
+            ips = d.join('\r\n')
+        }
+        else {
+            ips = `We couldn't find any ${rtype} records for ${domain}`
+        }
+
+        output = `${ips}
+
+=======
+1.1.1.1 is a partnership between Cloudflare and APNIC`
+    }
+
+    let t = await sendEmail(secretsEmail, messageFrom, output)
+    return new Response(output, {
+        headers: {
+            'Content-Type': 'text/plain'
+        }
+    })
+
 }
 
 async function handleRequest(request) {
     const r = new router()
 
     // /incoming/*
+    r.post('/incoming/email', req => handleEmail(req)) // email
     r.post('/incoming/telegram', req => handleTelegram(req)) // telegram
     r.post('/incoming/twilio', req => handleTwilio(req)) // twilio
 
