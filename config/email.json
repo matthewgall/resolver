@@ -1,0 +1,9 @@
+{
+  "auth": "",
+  "from": {
+    "name": "1.1.1.1",
+    "address": "lookup@resolver.email",
+    "domain": "resolver.email"
+  },
+  "subject": "Your lookup results from 1.1.1.1"
+}
