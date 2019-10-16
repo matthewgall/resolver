@@ -24,6 +24,18 @@ function isInArray(value, array) {
   return array.indexOf(value) > -1;
 }
 
+function validate(rrtype, fqdn) {
+    if (validator.isFQDN(fqdn) == false) {
+        return `${fqdn} does not appear to be a FQDN`
+    }
+
+    if (isInArray(rrtype, rrtypes) == false) {
+        return `${rrtype} is not supported at this time. Please try another record type (e.g AAAA ${fqdn})`
+    }
+
+    return true
+}
+
 function buildResponse(t) {
     return `${t}
 
@@ -92,12 +104,9 @@ async function handleTwilio(req) {
         domain = data[0].toLowerCase()
     }
 
-    if (validator.isFQDN(domain) == false) {
-        return new Response(buildResponse(`${domain} does not appear to be a FQDN`))
-    }
-
-    if (isInArray(rtype, rrtypes) == false) {
-        return new Response(buildResponse(`${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`))
+    output = validate(rtype, domain)
+    if (output !== true) {
+        return new Response(buildResponse(output))
     }
 
     let d = await getDNS(domain, rtype)
@@ -164,22 +173,10 @@ To get started, simply send the record type (default: AAAA), followed by a space
         return new Response(output)
     }
 
-    if (validator.isFQDN(domain) == false) {
-        output = buildResponse(`${domain} does not appear to be a FQDN`)
+    output = validate(rtype, domain)
+    if (output !== true) {
         let t = await sendTelegram(botToken, messageId, output)
-        return new Response(output)
-    }
-
-    if (isInArray(rtype, rrtypes) == false) {
-        output = buildResponse(`${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`)
-        let t = await sendTelegram(botToken, messageId, output)
-        return new Response(output)
-    }
-
-    if (isInArray(rtype, rrtypes) == false) {
-        output = buildResponse(`${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`)
-        let t = await sendTelegram(botToken, messageId, output)
-        return new Response(output)
+        return new Response(buildResponse(output))
     }
 
     let d = await getDNS(domain, rtype)
@@ -224,16 +221,10 @@ async function handleEmail(req) {
         domain = data[0].toLowerCase()
     }
 
-    if (validator.isFQDN(domain) == false) {
-        output = buildResponse(`${domain} does not appear to be a FQDN`)
+    output = validate(rtype, domain)
+    if (output !== true) {
         let t = await sendEmail(secretsEmail, messageFrom, output)
-        return new Response(output)
-    }
-
-    if (isInArray(rtype, rrtypes) == false) {
-        output = buildResponse(`${rtype} is not supported at this time. Please try another record type (e.g AAAA ${domain})`)
-        let t = await sendEmail(secretsEmail, messageFrom, output)
-        return new Response(output)
+        return new Response(buildResponse(output))
     }
 
     let d = await getDNS(domain, rtype)
